@@ -19,49 +19,36 @@ public class MotanPlugin implements IPlugin {
     //协议
     private ProtocolConfig protocolConfig = new ProtocolConfig();
     //接口
-    protected List<Class> classList = new ArrayList<Class>();
-    //启动时检查注册中心是否存在
-    private boolean check = false;
+    protected List<Service> classList = new ArrayList<Service>();
+
     //注册中心地址，支持多个ip+port，格式：ip1:port1,ip2:port2,ip3，如果没有port，则使用默认的port
     private String address;
     //注册中心类型 有consul和zookeeper 或者local
-    private String regProtocol = "consul";
-    //注册配置名称
-    private String name;
-    //协议id 不确定用处
-    private String id;
-    //filter, 多个filter用","分割，blank string 表示采用默认的filter配置
-    private String filter;
-    //序列化方式
-    private String serialization;
-    //当有多个IP的时候可以指定某个IP
-    private String hosts;
-    private void init(){
-        registryConfig.setCheck(String.valueOf(check));
-        registryConfig.setAddress(address);
-        registryConfig.setRegProtocol(regProtocol);
-        protocolConfig.setName(name);
-        protocolConfig.setId(id);
-        protocolConfig.setFilter(filter);
-        protocolConfig.setSerialization(serialization);
+    private RegistryType regProtocol;
 
+    //协议id 默认motan
+    private String id="motan";
+    //注册配置名称 默认motan
+    private String name="motan";
+
+    private void init(){
+        protocolConfig.setId(id);
+        protocolConfig.setName(name);
+        registryConfig.setRegProtocol(regProtocol.getValue());
+        registryConfig.setAddress(address);
     }
 
-    private <T> void registry(Class<T>interfaceClass,Object object,RpcConfig config){
+    private <T> void registry(Class<T>interfaceClass, Object object, RpcConfig config){
 
         MotanSwitcherUtil.setSwitcherValue(MotanConstants.REGISTRY_HEARTBEAT_SWITCHER, false);
         ServiceConfig<T> motanServiceConfig = new ServiceConfig<T>();
         motanServiceConfig.setRegistry(registryConfig);
         motanServiceConfig.setProtocol(protocolConfig);
 
-        // 设置接口及实现类
+        // 设置接口及实现类以及实现接口
         motanServiceConfig.setInterface(interfaceClass);
         motanServiceConfig.setRef((T) object);
-        motanServiceConfig.setHost(hosts);
-
-        motanServiceConfig.setShareChannel(true);
-        motanServiceConfig.setExport(String.format("motan:%s", config.getPort()));
-        motanServiceConfig.setCheck(String.valueOf(check));
+        motanServiceConfig.setExport(String.format(id+":%s", config.getPort()));
 
         initInterface(motanServiceConfig, config);
 
@@ -75,7 +62,8 @@ public class MotanPlugin implements IPlugin {
         interfaceConfig.setGroup(config.getGroup());
         interfaceConfig.setVersion(config.getVersion());
         interfaceConfig.setRequestTimeout(config.getTimeout());
-
+        interfaceConfig.setProxy(config.getProxy());
+        interfaceConfig.setFilter(config.getFilter());
 
         if (config.getActives() != null) {
             interfaceConfig.setActives(config.getActives());
@@ -93,21 +81,20 @@ public class MotanPlugin implements IPlugin {
             interfaceConfig.setCheck(config.getCheck().toString());
         }
 
-        interfaceConfig.setProxy(config.getProxy());
-        interfaceConfig.setFilter(config.getFilter());
+
     }
 
-    public void addService(Class clazz){
-        classList.add(clazz);
+    public void addService(Class clazz, RpcConfig rpcConfig){
+        classList.add(new Service(clazz,rpcConfig));
     }
 
 
     public boolean start() {
         init();
-        for(Class clazz : classList){
-            Class[] inters = clazz.getInterfaces();
+        for(Service service : classList){
+            Class[] inters = service.getClazz().getInterfaces();
             if (inters == null || inters.length == 0) {
-                throw new RuntimeException(String.format("class[%s] has no interface", clazz));
+                throw new RuntimeException(String.format("class[%s] has no interface", service.getRpcConfig()));
             }
 
             //对某些系统的类 进行排除，例如：Serializable 等
@@ -125,15 +112,14 @@ public class MotanPlugin implements IPlugin {
                     continue;
                 }
 
-                registry(inter,Aop.get(clazz),new RpcConfig());
+                registry(inter,Aop.get(service.getClazz()), service.getRpcConfig());
             }
         }
-
-
         return true;
     }
 
     public boolean stop() {
+        // TODO: 2019-09-17
         return true;
     }
 }
