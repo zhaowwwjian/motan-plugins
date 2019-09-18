@@ -22,9 +22,9 @@ public class MotanPlugin implements IPlugin {
     protected List<Service> classList = new ArrayList<Service>();
 
     //注册中心地址，支持多个ip+port，格式：ip1:port1,ip2:port2,ip3，如果没有port，则使用默认的port
-    private String address;
+    private String address="127.0.0.1";
     //注册中心类型 有consul和zookeeper 或者local
-    private RegistryType regProtocol;
+    private RegistryType regProtocol = RegistryType.REGISTRY_CONSUL;
 
     //协议id 默认motan
     private String id="motan";
