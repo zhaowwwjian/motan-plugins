@@ -6,16 +6,16 @@ import com.weibo.api.motan.config.RegistryConfig;
 
 public class MotanClient {
 
-    public static <T>  T test(Class<T> clazz,String group,String version,Integer timeout,RegistryConfig registryConfig){
+    public static <T>  T service(Class<T> clazz,String group,String version,Integer timeout,RegistryConfig registryConfig){
         RefererConfig<T> motanDemoServiceReferer = new RefererConfig<T>();
 
         // 设置接口及实现类
         motanDemoServiceReferer.setInterface(clazz);
 
         // 配置服务的group以及版本号
-        motanDemoServiceReferer.setGroup("user-info");
-        motanDemoServiceReferer.setVersion("1.0");
-        motanDemoServiceReferer.setRequestTimeout(1000);
+        motanDemoServiceReferer.setGroup(group);
+        motanDemoServiceReferer.setVersion(version);
+        motanDemoServiceReferer.setRequestTimeout(timeout);
 
         motanDemoServiceReferer.setRegistry(registryConfig);
 

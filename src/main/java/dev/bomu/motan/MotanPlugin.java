@@ -24,17 +24,22 @@ public class MotanPlugin implements IPlugin {
     //注册中心地址，支持多个ip+port，格式：ip1:port1,ip2:port2,ip3，如果没有port，则使用默认的port
     private String address="127.0.0.1";
     //注册中心类型 有consul和zookeeper 或者local
-    private RegistryType regProtocol = RegistryType.REGISTRY_CONSUL;
+    private RegistryType registryType = RegistryType.REGISTRY_CONSUL;
 
     //协议id 默认motan
     private String id="motan";
     //注册配置名称 默认motan
     private String name="motan";
 
+    public MotanPlugin(String address,RegistryType registryType){
+        this.address = address;
+        this.registryType = registryType;
+    }
+
     private void init(){
         protocolConfig.setId(id);
         protocolConfig.setName(name);
-        registryConfig.setRegProtocol(regProtocol.getValue());
+        registryConfig.setRegProtocol(registryType.getValue());
         registryConfig.setAddress(address);
     }
 
