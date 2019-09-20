@@ -9,26 +9,18 @@ import com.weibo.api.motan.config.RegistryConfig;
 import com.weibo.api.motan.config.ServiceConfig;
 import com.weibo.api.motan.util.MotanSwitcherUtil;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MotanPlugin implements IPlugin {
 
-    //注册中心
     private RegistryConfig registryConfig = new RegistryConfig();
-    //协议
     private ProtocolConfig protocolConfig = new ProtocolConfig();
-    //接口
     protected List<Service> classList = new ArrayList<Service>();
-
-    //注册中心地址，支持多个ip+port，格式：ip1:port1,ip2:port2,ip3，如果没有port，则使用默认的port
-    private String address="127.0.0.1";
-    //注册中心类型 有consul和zookeeper 或者local
-    private RegistryType registryType = RegistryType.REGISTRY_CONSUL;
-
-    //协议id 默认motan
+    private String address;
+    private RegistryType registryType;
     private String id="motan";
-    //注册配置名称 默认motan
     private String name="motan";
 
     public MotanPlugin(String address,RegistryType registryType){
@@ -44,7 +36,6 @@ public class MotanPlugin implements IPlugin {
     }
 
     private <T> void registry(Class<T>interfaceClass, Object object, RpcConfig config){
-
         MotanSwitcherUtil.setSwitcherValue(MotanConstants.REGISTRY_HEARTBEAT_SWITCHER, false);
         ServiceConfig<T> motanServiceConfig = new ServiceConfig<T>();
         motanServiceConfig.setRegistry(registryConfig);
@@ -56,7 +47,6 @@ public class MotanPlugin implements IPlugin {
         motanServiceConfig.setExport(String.format(id+":%s", config.getPort()));
 
         initInterface(motanServiceConfig, config);
-
         motanServiceConfig.export();
 
         MotanSwitcherUtil.setSwitcherValue(MotanConstants.REGISTRY_HEARTBEAT_SWITCHER, true);
@@ -85,8 +75,6 @@ public class MotanPlugin implements IPlugin {
         if (config.getCheck() != null) {
             interfaceConfig.setCheck(config.getCheck().toString());
         }
-
-
     }
 
     public void addService(Class clazz, RpcConfig rpcConfig){
@@ -99,11 +87,12 @@ public class MotanPlugin implements IPlugin {
         for(Service service : classList){
             Class[] inters = service.getClazz().getInterfaces();
             if (inters == null || inters.length == 0) {
-                throw new RuntimeException(String.format("class[%s] has no interface", service.getRpcConfig()));
+                throw new RuntimeException(String.format("class[%s] has no interface", service.getClazz()));
             }
-
-            //对某些系统的类 进行排除，例如：Serializable 等
-            Class[] excludes = new Class[0];
+            // TODO: 2019-09-20  添加例外的接口
+            Class[] excludes = new Class[]{
+                    Serializable.class
+            };
             for (Class inter : inters) {
                 boolean isContinue = false;
                 for (Class ex : excludes) {
@@ -112,7 +101,6 @@ public class MotanPlugin implements IPlugin {
                         break;
                     }
                 }
-
                 if (isContinue) {
                     continue;
                 }
@@ -124,7 +112,7 @@ public class MotanPlugin implements IPlugin {
     }
 
     public boolean stop() {
-        // TODO: 2019-09-17
+        // TODO: 2019-09-17 销毁删除
         return true;
     }
 }

@@ -8,14 +8,10 @@ public enum RegistryType {
 
     private String value;
 
-
-
-    // 构造方法
-    private RegistryType(String value) {
+    RegistryType(String value) {
         this.value = value;
 
     }
-    // 普通方法
     public static String getName(String value) {
         for (RegistryType c : RegistryType.values()) {
             if (c.getValue().equalsIgnoreCase(value)) {

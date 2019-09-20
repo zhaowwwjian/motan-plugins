@@ -1,5 +1,6 @@
 package dev.bomu.motan;
 
+
 public class RpcConfig {
 
     private Integer port;
